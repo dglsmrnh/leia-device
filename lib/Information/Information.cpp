@@ -6,7 +6,7 @@
 
 bool Information::processJson(const char* json, const bool saveJson) {
     // Parse the JSON content
-    StaticJsonDocument<2048> doc;
+    DynamicJsonDocument doc(100000);
     DeserializationError error = deserializeJson(doc, json);
 
     if (error) {
@@ -19,7 +19,10 @@ bool Information::processJson(const char* json, const bool saveJson) {
     characterInfo.username = doc["username"].as<String>();
 
     JsonObject character = doc["character"];
-    characterInfo.coins = character["coins"];
+    characterInfo.character.name = character["name"].as<String>();
+    characterInfo.character.coins = character["coins"].as<int>();
+    characterInfo.character.class_name = character["class_name"].as<String>();
+    characterInfo.character.race = character["race"].as<String>();
 
     // Process attributes
     JsonArray attributesArray = character["attributes"];
@@ -28,7 +31,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
         attributeItem.name = attribute["name"].as<String>();
         attributeItem.points = attribute["points"].as<int>();
         attributeItem.color = attribute["color"].as<String>();
-        characterInfo.attributesList.push_back(attributeItem);
+        characterInfo.character.attributes.push_back(attributeItem);
     }
 
     JsonArray inventoryArray = character["inventory"];
@@ -37,8 +40,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
         inventoryItem.id = item["id"].as<String>();
         inventoryItem.name = item["name"].as<String>();
         inventoryItem.quantity = item["quantity"].as<int>();
-        inventoryItem.type = item["type"].as<String>();
-        characterInfo.inventoryList.push_back(inventoryItem);
+        characterInfo.character.inventory.push_back(inventoryItem);
     }
 
     JsonArray questsArray = character["quests"];
@@ -47,10 +49,11 @@ bool Information::processJson(const char* json, const bool saveJson) {
         questItem.id = item["id"].as<String>();
         questItem.name = item["name"].as<String>();
         questItem.status = item["status"].as<int>();
-        characterInfo.questsList.push_back(questItem);
+        characterInfo.character.quests.push_back(questItem);
     }
 
     addCharacterInfo(characterInfo);
+    saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS
@@ -85,20 +88,20 @@ const CharacterInfo& Information::getCharacterInfo() const {
 
 const char* Information::getCharacterInfoJson() const {
     // Create a JSON document to store the character information
-    DynamicJsonDocument doc(2048);
+    DynamicJsonDocument doc(100000);
 
     // Set the username
     doc["username"] = this->characterInfo.username;
 
     // Create a nested object for the character information
     JsonObject characterObject = doc.createNestedObject("character");
-    characterObject["coins"] = this->characterInfo.coins;
+    characterObject["coins"] = this->characterInfo.character.coins;
 
     // Create an array for the inventory items
     JsonArray inventoryArray = characterObject.createNestedArray("inventory");
 
     // Add each inventory item to the array
-    for (const Inventory& inventoryItem : this->characterInfo.inventoryList) {
+    for (const Inventory& inventoryItem : this->characterInfo.character.inventory) {
         JsonObject itemObject = inventoryArray.createNestedObject();
         itemObject["id"] = inventoryItem.id;
         itemObject["name"] = inventoryItem.name;
@@ -113,7 +116,7 @@ const char* Information::getCharacterInfoJson() const {
 }
 
 bool Information::saveImages() const {
-  for (const Image& image : this->characterInfo.imagesList) {
+  for (const Image& image : this->characterInfo.character.images) {
     if (!image.type.isEmpty() && !image.base64.isEmpty()) {
         char* base64code = new char[strlen(image.base64.c_str()) + 1];
         strcpy(base64code, image.base64.c_str());
@@ -135,6 +138,7 @@ bool Information::saveImages() const {
         // Save the binary data to a file in SPIFFS
         String filePath = "/";
         filePath.concat(image.type);
+        filePath.concat(".bmp");
         File file = SPIFFS.open(filePath.c_str(), "w");
         if (file) {
             // Write directly from the buffer

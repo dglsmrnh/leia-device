@@ -9,7 +9,6 @@ struct Inventory {
   String id;
   String name;
   int quantity;
-  String type;
 };
 
 // Define a struct to represent a quest
@@ -32,13 +31,21 @@ struct Image {
   String base64;
 };
 
+struct Character {
+  String name;
+  std::vector<Inventory> inventory;
+  std::vector<Quest> quests;
+  std::vector<Attribute> attributes;
+  std::vector<Image> images;
+  int coins;
+  int level;
+  String class_name;
+  String race;
+};
+
 struct CharacterInfo {
   String username;
-  int coins;
-  std::vector<Inventory> inventoryList;
-  std::vector<Quest> questsList;
-  std::vector<Attribute> attributesList;
-  std::vector<Image> imagesList;
+  Character character;  
 };
 
 class Information {
@@ -48,8 +55,6 @@ public:
   const CharacterInfo& getCharacterInfo() const;
   const char* getCharacterInfoJson() const;
   bool saveImages() const;
-
-private:
   CharacterInfo characterInfo;
 };
 
