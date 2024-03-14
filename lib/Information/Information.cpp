@@ -16,7 +16,9 @@ bool Information::processJson(const char* json, const bool saveJson) {
 
     CharacterInfo characterInfo;
     // Process character information
+    Serial.println(doc["data"]["username"].as<String>());
     characterInfo.username = doc["username"].as<String>();
+    Serial.println(characterInfo.username);
 
     JsonObject character = doc["character"];
     characterInfo.character.name = character["name"].as<String>();
@@ -53,7 +55,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
     }
 
     addCharacterInfo(characterInfo);
-    saveImages();
+    // saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS
@@ -79,10 +81,12 @@ bool Information::processJson(const char* json, const bool saveJson) {
 }
 
 void Information::addCharacterInfo(const CharacterInfo& characterInfo) {
+    Serial.println("save character info");
     this->characterInfo = characterInfo;
 }
 
 const CharacterInfo& Information::getCharacterInfo() const {
+    Serial.println(this->characterInfo.username);
     return this->characterInfo;
 }
 

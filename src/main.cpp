@@ -96,6 +96,7 @@ bool readJsonData() {
     file.readBytes(buf.get(), fileSize);
 
     if(!inf.processJson(buf.get(), false)) {
+      Serial.println("process json error");
       return false;
     }
     return true;
@@ -151,18 +152,24 @@ void drawInventory() {
   const CharacterInfo& characterInfo = inf.getCharacterInfo();
   const std::vector<Inventory>& inventory = characterInfo.character.inventory;
 
+  Serial.println(tft.width());
+  Serial.println(inf.getCharacterInfo().username);
+  Serial.println(inventory.size());
+  Serial.println("get inventory 2");
   // Define a altura das seções do grid
   int cellWidth = tft.width() / inventory.size();
+  Serial.println(cellWidth);
 
  // Mostra as informações do inventário na tela
   int xPos = 0;
   for (const Inventory& item : inventory) {
 
+    Serial.println("get inventory");
+
     // Carrega e exibe a imagem correspondente ao ID do item
-    char filename[strlen(item.id.c_str()) + 6];
-    strcpy(filename, "/");
+    char filename[strlen(item.id.c_str()) + 1];
+
     strcpy(filename, item.id.c_str());
-    strcat(filename, ".bmp");
     displayImage(filename, xPos + (cellWidth - 18) / 2, 2);
 
     // Define a posição para a impressão do nome do item
@@ -185,6 +192,7 @@ void drawInventory() {
 }
 
 void showSelectedMenu(int index) {
+  homeScreen = false;
   if(index == 0) {
     drawInventory();
   }
