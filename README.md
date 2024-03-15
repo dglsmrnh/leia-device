@@ -2,60 +2,53 @@
 **received JSON BLE data**
 ```json
 {
-  "data": {
-    "account": {
-      "username": "",
-      "name": ""
-    },
-    "character": {
+  "username": "",
+  "character": {
+    "name": "",
+    "class": {
+      "id": "",
       "name": "",
-      "class": {
+      "description": ""
+    },
+    "race": {
+      "id": "",
+      "name": "",
+      "description": ""
+    },
+    "level": 0,
+    "coins": 0,
+    "attributtes": [
+      {
         "id": "",
         "name": "",
-        "description": ""
-      },
-      "race": {
+        "points": 0
+      }
+    ],
+    "inventory": [
+      {
         "id": "",
         "name": "",
-        "description": ""
-      },
-      "level": 0,
-      "coins": 0,
-      "attributtes": [
-        {
-          "id": "",
-          "name": "",
-          "points": 0
-        }
-      ],
-      "inventory": [
-        {
-          "id": "",
-          "name": "",
-          "quantity": 0
-        }
-      ],
-      "images": [
-        {
-          "type": "",
-          "base64code": ""
-        }
-      ]
-    }
+        "quantity": 0
+      }
+    ],
+    "images": [
+      {
+        "type": "",
+        "base64code": ""
+      }
+    ]
   }
 }
 ```
 **sent JSON BLE data**
 ```json
 {
-  "data": {
-    "username": "",
-    "inventory": [
-      {
-        "id": "",
-        "quantity": ""
-      }
-    ]
-  }
+  "username": "",
+  "inventory": [
+    {
+      "id": "",
+      "quantity": ""
+    }
+  ]
 }
 ```
