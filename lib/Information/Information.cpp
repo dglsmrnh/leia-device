@@ -159,3 +159,82 @@ bool Information::saveImages() const {
 
   return true;
 }
+
+bool Information::saveCharacterInfoToSPIFFS() {
+  // Create a JSON document to hold the character info
+  DynamicJsonDocument doc(100000);
+
+  // Add username to the document
+  doc["username"] = this->characterInfo.username;
+
+  // Create a JsonObject for the character and add its properties
+  JsonObject character = doc.createNestedObject("character");
+  character["name"] = this->characterInfo.character.name;
+  character["coins"] = this->characterInfo.character.coins;
+  character["class_name"] = this->characterInfo.character.class_name;
+  character["race"] = this->characterInfo.character.race;
+
+  // Add attributes array to the character
+  JsonArray attributesArray = character.createNestedArray("attributes");
+  for (const Attribute& attribute : this->characterInfo.character.attributes) {
+    JsonObject attr = attributesArray.createNestedObject();
+    attr["name"] = attribute.name;
+    attr["points"] = attribute.points;
+    attr["color"] = attribute.color;
+  }
+
+  // Add inventory array to the character
+  JsonArray inventoryArray = character.createNestedArray("inventory");
+  for (const Inventory& item : this->characterInfo.character.inventory) {
+    JsonObject inv = inventoryArray.createNestedObject();
+    inv["id"] = item.id;
+    inv["name"] = item.name;
+    inv["quantity"] = item.quantity;
+  }
+
+  // Add quests array to the character
+  JsonArray questsArray = character.createNestedArray("quests");
+  for (const Quest& quest : this->characterInfo.character.quests) {
+    JsonObject q = questsArray.createNestedObject();
+    q["id"] = quest.id;
+    q["name"] = quest.name;
+    q["status"] = quest.status;
+  }
+
+  // Open the data.json file in write mode
+  File file = SPIFFS.open("/data.json", "w");
+  if (!file) {
+    Serial.println("Failed to open data.json file for writing");
+    return false;
+  }
+
+  // Serialize the JSON document and write it to the file
+  if (serializeJson(doc, file) == 0) {
+    Serial.println("Failed to write JSON to file");
+    file.close();
+    return false;
+  }
+
+  // Close the file
+  file.close();
+
+  Serial.println("Character info successfully saved to SPIFFS!");
+  return true;
+}
+
+void Information::removePotion(const char* potion) {
+
+  // Loop through the inventory to find the potion by name
+  for (Inventory& item : this->characterInfo.character.inventory) {
+    const char* itemName = item.name.c_str();
+    if (strcmp(itemName, potion) == 0) {
+      // Decrement the quantity of the potion by 1
+      if (item.quantity > 0) {
+        item.quantity--;
+      }
+      break; // Stop after updating the potion
+    }
+  }
+
+  saveCharacterInfoToSPIFFS();
+}
