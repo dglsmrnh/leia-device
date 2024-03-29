@@ -52,6 +52,8 @@ class Information {
 public:
   bool  processJson(const char* json, const bool saveJson);
   void addCharacterInfo(const CharacterInfo& characterInfo);
+  void removePotion(const char* potion);
+  bool saveCharacterInfoToSPIFFS();
   const CharacterInfo& getCharacterInfo() const;
   const char* getCharacterInfoJson() const;
   bool saveImages() const;
