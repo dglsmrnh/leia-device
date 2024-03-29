@@ -72,12 +72,12 @@ bool homeScreen = true; // Indicates whether the home screen is being displayed
 // Define HP-related variables
 #define MAX_HP 100
 int hp = MAX_HP;
-int hpDecreaseRate = 1; // HP decrease rate per 20 minutes (adjust as needed)
+int hpDecreaseRate = 1; // HP decrease rate per HP_UPDATE_INTERVAL minutes (adjust as needed)
 const char* hpFilePath = "/hp.txt";
-const unsigned long HP_UPDATE_INTERVAL = 1 * 60 * 1000; // 20 minutes in milliseconds
+const unsigned long HP_UPDATE_INTERVAL = 1 * 60 * 1000; // minutes in milliseconds
 
 // Variable to store the last update time
-RTC_DATA_ATTR unsigned long lastUpdateTime = 0;
+RTC_DATA_ATTR unsigned long lastUpdateTime = millis();
 
 void clearScreen() {
   tft.fillScreen(ST77XX_BLACK); // Clear the screen
@@ -215,6 +215,16 @@ bool readJsonData() {
   }
 }
 
+void drawHP() {
+  tft.fillRect(0, tft.height() - 20, tft.width() - (CHARACTER_X + 20), 20, ST7735_BLACK); // Adjust dimensions as needed
+  // Draw button text
+  tft.setCursor(0, tft.height() - 20); // Adjust for text alignment
+  tft.setTextColor(ST7735_WHITE); // Text color
+  tft.setTextSize(1); // Text size
+  tft.println("HP");
+  tft.println(hp);
+}
+
 void drawMenu() {
   // limpa a tela
   clearScreen();
@@ -237,12 +247,7 @@ void drawMenu() {
     tft.print(menuItems[i]);
   }
   
-  // Draw button text
-  tft.setCursor(0, tft.height() - 20); // Adjust for text alignment
-  tft.setTextColor(ST7735_WHITE); // Text color
-  tft.setTextSize(1); // Text size
-  tft.println("HP");
-  tft.println(hp);
+  drawHP();
   displayImage("/character.bmp", CHARACTER_X, CHARACTER_Y);
 }
 
@@ -254,10 +259,14 @@ void goToHomeScreen() {
 
 // Load HP from SPIFFS
 void loadHP() {
+  Serial.println(hp);
   if (SPIFFS.exists(hpFilePath)) {
     File hpFile = SPIFFS.open(hpFilePath, FILE_READ);
     if (hpFile) {
-      hp = hpFile.parseInt();
+      Serial.println(hpFile);
+      String hpStr = hpFile.readStringUntil('\n'); // Read until newline character
+      hp = hpStr.toInt(); // Convert string to integer
+      Serial.println(hp);
       hpFile.close();
     } else {
       Serial.println("Failed to read HP from file");
@@ -279,6 +288,7 @@ void saveHP() {
 // Function to decrease HP
 void decreaseHP() {
   loadHP();
+  Serial.println(hp);
 
   // Calculate elapsed time in milliseconds
   unsigned long currentTime = millis();
@@ -286,12 +296,15 @@ void decreaseHP() {
 
   // Calculate the number of intervals of 20 minutes elapsed
   unsigned long intervals = elapsedTime / HP_UPDATE_INTERVAL;
+  Serial.println(intervals);
 
   // Calculate the HP decrease amount based on the number of intervals and the HP decrease rate
   int hpDecreaseAmount = intervals * hpDecreaseRate; // Decrease HP by hpDecreaseRate for each 20-minute interval
+  Serial.println(hpDecreaseAmount);
 
   // Decrease HP by the calculated amount
   hp -= hpDecreaseAmount;
+  Serial.println(hp);
 
   // Ensure HP doesn't go below 0
   if (hp < 0) {
@@ -306,6 +319,8 @@ void decreaseHP() {
   // Print updated HP
   Serial.print("HP: ");
   Serial.println(hp);
+
+  drawHP();
 }
 
 // Function to recover HP based on the selected inventory item
@@ -345,6 +360,9 @@ void recoverHP() {
 
   // Save HP to SPIFFS
   saveHP();
+
+  loadHP();
+  drawHP();
 
   inf.removePotion(selectedPotion.name.c_str());
 
@@ -448,7 +466,7 @@ void setup() {
   setupBLE();
 
   readJsonData();
-
+  loadHP();
   drawMenu();
 }
 
