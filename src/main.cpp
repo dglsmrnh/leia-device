@@ -134,7 +134,7 @@ class BLECallback : public BLECharacteristicCallbacks {
 };
 
 void setupBLE() {
-  BLEDevice::init("LEIA_BLE");
+  BLEDevice::init("ESP32_BLE");
   BLEDevice::setMTU(512);
   pServer = BLEDevice::createServer();
   pService = pServer->createService("1b9d0504-79f2-11ee-b962-0242ac120002");
