@@ -112,15 +112,19 @@ class BLEServerCallback : public BLEServerCallbacks {
       Serial.println("Device disconnected.");
     }
 };
-
+std::string receivedValue;
 class BLECallback : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* pCharacteristic) {
     std::string value = pCharacteristic->getValue();
+    receivedValue += value;
     Serial.println("Received data: ");
-    Serial.println(value.c_str());
+    Serial.println(receivedValue.c_str());
     
-    if(!inf.processJson(value.c_str(), true)) {
+    if(!inf.processJson(receivedValue.c_str(), true)) {
       Serial.println("JSON process error");
+    }
+    else {
+      receivedValue = "";
     }
   }
 
@@ -131,6 +135,7 @@ class BLECallback : public BLECharacteristicCallbacks {
 
 void setupBLE() {
   BLEDevice::init("LEIA_BLE");
+  BLEDevice::setMTU(512);
   pServer = BLEDevice::createServer();
   pService = pServer->createService("1b9d0504-79f2-11ee-b962-0242ac120002");
 
