@@ -216,13 +216,15 @@ bool readJsonData() {
 }
 
 void drawHP() {
-  tft.fillRect(0, tft.height() - 20, tft.width() - (CHARACTER_X + 20), 20, ST7735_BLACK); // Adjust dimensions as needed
-  // Draw button text
-  tft.setCursor(0, tft.height() - 20); // Adjust for text alignment
-  tft.setTextColor(ST7735_WHITE); // Text color
-  tft.setTextSize(1); // Text size
-  tft.println("HP");
-  tft.println(hp);
+  if(homeScreen) {
+    tft.fillRect(0, tft.height() - 20, tft.width() - (CHARACTER_X + 20), 20, ST7735_BLACK); // Adjust dimensions as needed
+    // Draw button text
+    tft.setCursor(0, tft.height() - 20); // Adjust for text alignment
+    tft.setTextColor(ST7735_WHITE); // Text color
+    tft.setTextSize(1); // Text size
+    tft.println("HP");
+    tft.println(hp);
+  }
 }
 
 void drawMenu() {
