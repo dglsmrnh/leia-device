@@ -46,6 +46,7 @@ BLEService* pService;
 BLECharacteristic* pCharacteristic;
 
 bool deviceConnected = false;
+bool transferingData = false;
 int selectedInventoryIndex = 0; // Initialize with the first inventory item
 
 // Image reader
@@ -108,20 +109,54 @@ void goToSleep() {
   esp_deep_sleep_start();
 }
 
+void drawSynchronize() {
+  clearScreen();
+  // Clear the screen
+  tft.fillScreen(ST77XX_BLACK);
+
+  // Display BLE status
+  if (BLEDevice::getInitialized()) {
+    tft.setCursor(0, 10);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(1);
+    tft.println("Esperando contato da guilda...");
+    if (deviceConnected) {
+      tft.println("Contato com a guilda. Siga os passos no app.");
+    } else {
+      if(transferingData) {
+        tft.println("Trocando informacoes com a guilda...");
+      }
+      else {
+        // tft.println("Nenhum dispositivo conectado...");
+      }
+    }
+  } else {
+    tft.setCursor(0, 10);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(1);
+    tft.println("BLE is not initialized");
+  }
+}
+
 class BLEServerCallback : public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
+      transferingData = false;
+      drawSynchronize();
       Serial.println("Device connected.");
     }
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+      transferingData = false;
+      drawSynchronize();
       Serial.println("Device disconnected.");
     }
 };
 std::string receivedValue;
 class BLECallback : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* pCharacteristic) {
+    transferingData = true;
     std::string value = pCharacteristic->getValue();
     receivedValue += value;
     Serial.println("Received data: ");
@@ -132,6 +167,7 @@ class BLECallback : public BLECharacteristicCallbacks {
     }
     else {
       receivedValue = "";
+      transferingData = false;
     }
   }
 
@@ -152,30 +188,6 @@ void setupBLE() {
   pService->start();
 }
 
-void drawSynchronize() {
-  clearScreen();
-  // Clear the screen
-  tft.fillScreen(ST77XX_BLACK);
-
-  // Display BLE status
-  if (BLEDevice::getInitialized()) {
-    tft.setCursor(0, 10);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.setTextSize(1);
-    tft.println("Esperando conexao...");
-    if (deviceConnected) {
-      tft.println("Dispositivo conectado. Siga os passos no app.");
-    } else {
-      tft.println("Nenhum dispositivo conectado...");
-    }
-  } else {
-    tft.setCursor(0, 10);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.setTextSize(1);
-    tft.println("BLE is not initialized");
-  }
-}
-
 void startBLEAdvertising() {
   pServer->getAdvertising()->start();
   drawSynchronize();
@@ -184,6 +196,7 @@ void startBLEAdvertising() {
 
 void stopBLEAdvertising() {
   deviceConnected = false;
+  transferingData = false;
   pServer->getAdvertising()->stop();
   Serial.println("BLE advertising stopped.");
 }
