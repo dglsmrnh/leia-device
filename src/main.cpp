@@ -507,13 +507,13 @@ void loop() {
   bool btn_right = !digitalRead(BTN_RIGHT_PIN);
 
   Serial.print('btn_up ');
-  Serial.println(btn_up);
+  Serial.println((btn_up ? 'false' : 'true'));
   Serial.print('btn_down ');
-  Serial.println(btn_down);
+  Serial.println((btn_down ? 'false' : 'true'));
   Serial.print('btn_left ');
-  Serial.println(btn_left);
+  Serial.println((btn_left ? 'false' : 'true'));
   Serial.print('btn_right ');
-  Serial.println(btn_right);  
+  Serial.println((btn_right ? 'false' : 'true'));  
 
   int xVal = JOYSTICK_DEFAULT_X;
   int yVal = JOYSTICK_DEFAULT_Y;
