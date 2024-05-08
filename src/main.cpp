@@ -32,8 +32,8 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS_PIN, TFT_DC_PIN, TFT_MOSI_PIN, TFT_
 // #define JOY_Y_PIN  GPIO_NUM_34
 // #define JOY_BTN_PIN GPIO_NUM_25
 
-#define BTN_UP_PIN  GPIO_NUM_27
-#define BTN_DOWN_PIN  GPIO_NUM_34
+#define BTN_UP_PIN  GPIO_NUM_35
+#define BTN_DOWN_PIN  GPIO_NUM_14
 #define BTN_LEFT_PIN GPIO_NUM_25
 #define BTN_RIGHT_PIN GPIO_NUM_26
 
@@ -506,14 +506,14 @@ void loop() {
   bool btn_left = !digitalRead(BTN_LEFT_PIN);
   bool btn_right = !digitalRead(BTN_RIGHT_PIN);
 
-  Serial.print('btn_up ');
-  Serial.println((btn_up ? 'false' : 'true'));
-  Serial.print('btn_down ');
-  Serial.println((btn_down ? 'false' : 'true'));
-  Serial.print('btn_left ');
-  Serial.println((btn_left ? 'false' : 'true'));
-  Serial.print('btn_right ');
-  Serial.println((btn_right ? 'false' : 'true'));  
+  Serial.print("btn_up ");
+  Serial.println((btn_up ? "false" : "true"));
+  Serial.print("btn_down ");
+  Serial.println((btn_down ? "false" : "true"));
+  Serial.print("btn_left ");
+  Serial.println((btn_left ? "false" : "true"));
+  Serial.print("btn_right ");
+  Serial.println((btn_right ? "false" : "true"));  
 
   int xVal = JOYSTICK_DEFAULT_X;
   int yVal = JOYSTICK_DEFAULT_Y;
