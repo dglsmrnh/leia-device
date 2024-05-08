@@ -507,7 +507,7 @@ void loop() {
   bool btn_right = !digitalRead(BTN_RIGHT_PIN);
 
   Serial.print("btn_up ");
-  Serial.println(("btn_up" ? "false" : "true"));
+  Serial.println((btn_up ? "false" : "true"));
   Serial.print("btn_down ");
   Serial.println((btn_down ? "false" : "true"));
   Serial.print("btn_left ");
