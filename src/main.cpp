@@ -286,14 +286,11 @@ void goToHomeScreen() {
 
 // Load HP from SPIFFS
 void loadHP() {
-  Serial.println(hp);
   if (SPIFFS.exists(hpFilePath)) {
     File hpFile = SPIFFS.open(hpFilePath, FILE_READ);
     if (hpFile) {
-      Serial.println(hpFile);
       String hpStr = hpFile.readStringUntil('\n'); // Read until newline character
       hp = hpStr.toInt(); // Convert string to integer
-      Serial.println(hp);
       hpFile.close();
     } else {
       Serial.println("Failed to read HP from file");
@@ -315,7 +312,6 @@ void saveHP() {
 // Function to decrease HP
 void decreaseHP() {
   loadHP();
-  Serial.println(hp);
 
   // Calculate elapsed time in milliseconds
   unsigned long currentTime = millis();
@@ -323,15 +319,12 @@ void decreaseHP() {
 
   // Calculate the number of intervals of 20 minutes elapsed
   unsigned long intervals = elapsedTime / HP_UPDATE_INTERVAL;
-  Serial.println(intervals);
 
   // Calculate the HP decrease amount based on the number of intervals and the HP decrease rate
   int hpDecreaseAmount = intervals * hpDecreaseRate; // Decrease HP by hpDecreaseRate for each 20-minute interval
-  Serial.println(hpDecreaseAmount);
 
   // Decrease HP by the calculated amount
   hp -= hpDecreaseAmount;
-  Serial.println(hp);
 
   // Ensure HP doesn't go below 0
   if (hp < 0) {
