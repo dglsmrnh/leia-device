@@ -472,8 +472,8 @@ void setup() {
   }
 
   // initialize display and turn on backlight
-  //tft.initR(INITR_MINI160x80_PLUGIN);  // Init ST7735S mini display (when seeing inversed)
-  tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
+  tft.initR(INITR_MINI160x80_PLUGIN);  // Init ST7735S mini display (when seeing inversed)
+  //tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
   tft.setRotation(1); // Set display rotation as needed
   Serial.println(F("Initialized"));
   delay(500);
