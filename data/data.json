@@ -10,7 +10,7 @@
     "attributtes": [
       {
         "id": "forca",
-        "name": "Força",
+        "name": "Forca",
         "points": 12,
         "color" : "#FFF"
       },
@@ -22,13 +22,13 @@
       },
       {
         "id": "constituicao",
-        "name": "Constituição",
+        "name": "Constituicao",
         "points": 14,
         "color" : "#FFF"
       },
       {
         "id": "inteligencia",
-        "name": "Inteligência",
+        "name": "Inteligencia",
         "points": 10,
         "color" : "#FFF"
       },

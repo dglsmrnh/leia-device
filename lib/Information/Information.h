@@ -56,7 +56,7 @@ public:
   bool saveCharacterInfoToSPIFFS();
   const CharacterInfo& getCharacterInfo() const;
   const char* getCharacterInfoJson() const;
-  bool saveImages() const;
+  bool saveImages(const CharacterInfo& characterInfo) const;
   CharacterInfo characterInfo;
 };
 

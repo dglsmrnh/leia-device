@@ -16,7 +16,6 @@ bool Information::processJson(const char* json, const bool saveJson) {
 
     CharacterInfo characterInfo;
     // Process character information
-    Serial.println(doc["data"]["username"].as<String>());
     characterInfo.username = doc["username"].as<String>();
     Serial.println(characterInfo.username);
 
@@ -54,8 +53,16 @@ bool Information::processJson(const char* json, const bool saveJson) {
         characterInfo.character.quests.push_back(questItem);
     }
 
+    JsonArray imagesArray = character["images"];
+    for (JsonObject item : imagesArray) {
+        Image img;
+        img.type = item["type"].as<String>();
+        img.base64 = item["base64"].as<String>();
+        characterInfo.character.images.push_back(img);
+    }
+
+    saveImages(characterInfo);
     addCharacterInfo(characterInfo);
-    saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS
@@ -119,8 +126,10 @@ const char* Information::getCharacterInfoJson() const {
     return jsonString.c_str();
 }
 
-bool Information::saveImages() const {
-  for (const Image& image : this->characterInfo.character.images) {
+bool Information::saveImages(const CharacterInfo& characterInfo) const {
+  Serial.println("entrou images");
+  for (const Image& image : characterInfo.character.images) {
+    Serial.println(image.type);
     if (!image.type.isEmpty() && !image.base64.isEmpty()) {
         char* base64code = new char[strlen(image.base64.c_str()) + 1];
         strcpy(base64code, image.base64.c_str());
@@ -130,11 +139,11 @@ bool Information::saveImages() const {
         int decodedLength = Base64.decodedLength(base64code, inputStringLength);
     
         // Use a fixed-size buffer for decoding
-        char decodedData[decodedLength + 1];
+        char decodedData[decodedLength];
     
         // Decode directly to the buffer
         Base64.decode(decodedData, base64code, inputStringLength);
-        decodedData[decodedLength] = '\0'; // Null-terminate the string
+        // decodedData[decodedLength] = '\0'; // Null-terminate the string
     
         Serial.print("Decoded string is:\t");
         Serial.println(decodedData);
