@@ -252,6 +252,18 @@ void drawHP() {
   }
 }
 
+void displayCharacter() {
+  const CharacterInfo& characterInfo = inf.getCharacterInfo();
+
+  for (const Image& image : characterInfo.character.images) {
+    if(image.type == "character") {
+      char filename[strlen(image.name.c_str()) + 1];
+      strcpy(filename, image.name.c_str());
+      displayImage(filename, CHARACTER_X, CHARACTER_Y);
+    }
+  }
+}
+
 void drawMenu() {
   // limpa a tela
   clearScreen();
@@ -275,7 +287,7 @@ void drawMenu() {
   }
   
   drawHP();
-  displayImage("/character.bmp", CHARACTER_X, CHARACTER_Y);
+  displayCharacter();
 }
 
 void goToHomeScreen() {

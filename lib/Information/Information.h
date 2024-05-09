@@ -28,7 +28,7 @@ struct Attribute {
 // Define a struct to represent an image
 struct Image {
   String type;
-  String base64;
+  String name;
 };
 
 struct Character {
