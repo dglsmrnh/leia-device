@@ -55,7 +55,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
     }
 
     addCharacterInfo(characterInfo);
-    // saveImages();
+    saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS
@@ -140,9 +140,9 @@ bool Information::saveImages() const {
         Serial.println(decodedData);
     
         // Save the binary data to a file in SPIFFS
-        String filePath = "/";
-        filePath.concat(image.type);
-        filePath.concat(".bmp");
+        String filePath = image.type; //"/";
+        // filePath.concat(image.type);
+        // filePath.concat(".bmp");
         File file = SPIFFS.open(filePath.c_str(), "w");
         if (file) {
             // Write directly from the buffer

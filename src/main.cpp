@@ -28,9 +28,14 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS_PIN, TFT_DC_PIN, TFT_MOSI_PIN, TFT_
 // Display backlight enable pin
 #define TFT_BACKLIGHT_PIN GPIO_NUM_4
 
-#define JOY_X_PIN  GPIO_NUM_35
-#define JOY_Y_PIN  GPIO_NUM_34
-#define JOY_BTN_PIN GPIO_NUM_25
+// #define JOY_X_PIN  GPIO_NUM_35
+// #define JOY_Y_PIN  GPIO_NUM_34
+// #define JOY_BTN_PIN GPIO_NUM_25
+
+#define BTN_UP_PIN  GPIO_NUM_35
+#define BTN_DOWN_PIN  GPIO_NUM_14
+#define BTN_LEFT_PIN GPIO_NUM_25
+#define BTN_RIGHT_PIN GPIO_NUM_26
 
 #define BTN_BACK_PIN GPIO_NUM_33
 #define BTN_START_PIN GPIO_NUM_32 
@@ -41,6 +46,7 @@ BLEService* pService;
 BLECharacteristic* pCharacteristic;
 
 bool deviceConnected = false;
+bool transferingData = false;
 int selectedInventoryIndex = 0; // Initialize with the first inventory item
 
 // Image reader
@@ -64,6 +70,8 @@ Information inf;
 #define JOYSTICK_DOWN 4000
 #define JOYSTICK_LEFT 100
 #define JOYSTICK_RIGHT 4000
+#define JOYSTICK_DEFAULT_X 2000
+#define JOYSTICK_DEFAULT_Y 2000
 
 const char* menuItems[NUM_BUTTONS] = {"Inventario", "Sincronizar", "Desligar"};
 int selectedButton = 0; // Index of the currently selected button
@@ -101,20 +109,54 @@ void goToSleep() {
   esp_deep_sleep_start();
 }
 
+void drawSynchronize() {
+  clearScreen();
+  // Clear the screen
+  tft.fillScreen(ST77XX_BLACK);
+
+  // Display BLE status
+  if (BLEDevice::getInitialized()) {
+    tft.setCursor(0, 10);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(1);
+    tft.println("Esperando contato da guilda...");
+    if (deviceConnected) {
+      tft.println("Contato com a guilda. Siga os passos no app.");
+    } else {
+      if(transferingData) {
+        tft.println("Trocando informacoes com a guilda...");
+      }
+      else {
+        // tft.println("Nenhum dispositivo conectado...");
+      }
+    }
+  } else {
+    tft.setCursor(0, 10);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(1);
+    tft.println("BLE is not initialized");
+  }
+}
+
 class BLEServerCallback : public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
+      transferingData = false;
+      drawSynchronize();
       Serial.println("Device connected.");
     }
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+      transferingData = false;
+      drawSynchronize();
       Serial.println("Device disconnected.");
     }
 };
 std::string receivedValue;
 class BLECallback : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* pCharacteristic) {
+    transferingData = true;
     std::string value = pCharacteristic->getValue();
     receivedValue += value;
     Serial.println("Received data: ");
@@ -125,6 +167,7 @@ class BLECallback : public BLECharacteristicCallbacks {
     }
     else {
       receivedValue = "";
+      transferingData = false;
     }
   }
 
@@ -145,30 +188,6 @@ void setupBLE() {
   pService->start();
 }
 
-void drawSynchronize() {
-  clearScreen();
-  // Clear the screen
-  tft.fillScreen(ST77XX_BLACK);
-
-  // Display BLE status
-  if (BLEDevice::getInitialized()) {
-    tft.setCursor(0, 10);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.setTextSize(1);
-    tft.println("Esperando conexao...");
-    if (deviceConnected) {
-      tft.println("Dispositivo conectado. Siga os passos no app.");
-    } else {
-      tft.println("Nenhum dispositivo conectado...");
-    }
-  } else {
-    tft.setCursor(0, 10);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.setTextSize(1);
-    tft.println("BLE is not initialized");
-  }
-}
-
 void startBLEAdvertising() {
   pServer->getAdvertising()->start();
   drawSynchronize();
@@ -177,6 +196,7 @@ void startBLEAdvertising() {
 
 void stopBLEAdvertising() {
   deviceConnected = false;
+  transferingData = false;
   pServer->getAdvertising()->stop();
   Serial.println("BLE advertising stopped.");
 }
@@ -266,14 +286,11 @@ void goToHomeScreen() {
 
 // Load HP from SPIFFS
 void loadHP() {
-  Serial.println(hp);
   if (SPIFFS.exists(hpFilePath)) {
     File hpFile = SPIFFS.open(hpFilePath, FILE_READ);
     if (hpFile) {
-      Serial.println(hpFile);
       String hpStr = hpFile.readStringUntil('\n'); // Read until newline character
       hp = hpStr.toInt(); // Convert string to integer
-      Serial.println(hp);
       hpFile.close();
     } else {
       Serial.println("Failed to read HP from file");
@@ -295,7 +312,6 @@ void saveHP() {
 // Function to decrease HP
 void decreaseHP() {
   loadHP();
-  Serial.println(hp);
 
   // Calculate elapsed time in milliseconds
   unsigned long currentTime = millis();
@@ -303,15 +319,12 @@ void decreaseHP() {
 
   // Calculate the number of intervals of 20 minutes elapsed
   unsigned long intervals = elapsedTime / HP_UPDATE_INTERVAL;
-  Serial.println(intervals);
 
   // Calculate the HP decrease amount based on the number of intervals and the HP decrease rate
   int hpDecreaseAmount = intervals * hpDecreaseRate; // Decrease HP by hpDecreaseRate for each 20-minute interval
-  Serial.println(hpDecreaseAmount);
 
   // Decrease HP by the calculated amount
   hp -= hpDecreaseAmount;
-  Serial.println(hp);
 
   // Ensure HP doesn't go below 0
   if (hp < 0) {
@@ -443,15 +456,20 @@ void setup() {
 
   Serial.begin(115200);
   Serial.println(F("Hello! ST7735mini TFT"));
-  pinMode(JOY_X_PIN, INPUT);
-  pinMode(JOY_Y_PIN, INPUT);
+  // pinMode(JOY_X_PIN, INPUT);
+  // pinMode(JOY_Y_PIN, INPUT);
   // pinMode(JOY_BTN_PIN, INPUT);
+
+  pinMode(BTN_UP_PIN, INPUT_PULLUP);
+  pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
+  pinMode(BTN_LEFT_PIN, INPUT_PULLUP);
+  pinMode(BTN_RIGHT_PIN, INPUT_PULLUP);
   
   pinMode(BTN_BACK_PIN, INPUT_PULLUP);
   pinMode(BTN_START_PIN, INPUT_PULLUP);
 
   // Enable wake-up from the button press (low-to-high transition)
-  esp_sleep_enable_ext0_wakeup(JOY_BTN_PIN, HIGH);
+  // esp_sleep_enable_ext0_wakeup(JOY_BTN_PIN, HIGH);
 
   // initialize SPIFFS
   if(!SPIFFS.begin()) {
@@ -460,8 +478,8 @@ void setup() {
   }
 
   // initialize display and turn on backlight
-  //tft.initR(INITR_MINI160x80_PLUGIN);  // Init ST7735S mini display (when seeing inversed)
-  tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
+  tft.initR(INITR_MINI160x80_PLUGIN);  // Init ST7735S mini display (when seeing inversed)
+  //tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
   tft.setRotation(1); // Set display rotation as needed
   Serial.println(F("Initialized"));
   delay(500);
@@ -480,8 +498,39 @@ void setup() {
 void loop() {
 
   // Read joystick position
-  int xVal = analogRead(JOY_X_PIN);
-  int yVal = analogRead(JOY_Y_PIN);
+  // int xVal = analogRead(JOY_X_PIN);
+  // int yVal = analogRead(JOY_Y_PIN);
+
+  bool btn_up = !digitalRead(BTN_UP_PIN);
+  bool btn_down = !digitalRead(BTN_DOWN_PIN);
+  bool btn_left = !digitalRead(BTN_LEFT_PIN);
+  bool btn_right = !digitalRead(BTN_RIGHT_PIN);
+
+  Serial.print("btn_up ");
+  Serial.println((btn_up ? "false" : "true"));
+  Serial.print("btn_down ");
+  Serial.println((btn_down ? "false" : "true"));
+  Serial.print("btn_left ");
+  Serial.println((btn_left ? "false" : "true"));
+  Serial.print("btn_right ");
+  Serial.println((btn_right ? "false" : "true"));  
+
+  int xVal = JOYSTICK_DEFAULT_X;
+  int yVal = JOYSTICK_DEFAULT_Y;
+
+  if(btn_up) {
+    yVal = JOYSTICK_UP - 1; // minus 1 to work
+  }
+  else if(btn_down) {
+    yVal = JOYSTICK_DOWN + 1; // plus 1 to work
+  }
+  else if(btn_left) {
+    xVal = JOYSTICK_LEFT - 1; // minus 1 to work
+  }
+  else if(btn_right) {
+    xVal = JOYSTICK_RIGHT + 1; // plus 1 to work
+  }
+  
 
   // Serial.print("x ");
   // Serial.println(xVal);
