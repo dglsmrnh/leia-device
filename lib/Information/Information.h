@@ -28,7 +28,7 @@ struct Attribute {
 // Define a struct to represent an image
 struct Image {
   String type;
-  String base64;
+  String name;
 };
 
 struct Character {
@@ -56,7 +56,7 @@ public:
   bool saveCharacterInfoToSPIFFS();
   const CharacterInfo& getCharacterInfo() const;
   const char* getCharacterInfoJson() const;
-  bool saveImages() const;
+  bool saveImages(const CharacterInfo& characterInfo) const;
   CharacterInfo characterInfo;
 };
 

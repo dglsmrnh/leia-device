@@ -16,7 +16,6 @@ bool Information::processJson(const char* json, const bool saveJson) {
 
     CharacterInfo characterInfo;
     // Process character information
-    Serial.println(doc["data"]["username"].as<String>());
     characterInfo.username = doc["username"].as<String>();
     Serial.println(characterInfo.username);
 
@@ -54,8 +53,16 @@ bool Information::processJson(const char* json, const bool saveJson) {
         characterInfo.character.quests.push_back(questItem);
     }
 
+    JsonArray imagesArray = character["images"];
+    for (JsonObject item : imagesArray) {
+        Image img;
+        img.type = item["type"].as<String>();
+        img.name = item["name"].as<String>();
+        characterInfo.character.images.push_back(img);
+    }
+
+    // saveImages(characterInfo);
     addCharacterInfo(characterInfo);
-    // saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS
@@ -119,43 +126,46 @@ const char* Information::getCharacterInfoJson() const {
     return jsonString.c_str();
 }
 
-bool Information::saveImages() const {
-  for (const Image& image : this->characterInfo.character.images) {
-    if (!image.type.isEmpty() && !image.base64.isEmpty()) {
-        char* base64code = new char[strlen(image.base64.c_str()) + 1];
-        strcpy(base64code, image.base64.c_str());
-        // Decode the base64 data to binary data
-        int inputStringLength = strlen(base64code);
+bool Information::saveImages(const CharacterInfo& characterInfo) const {
+  // Serial.println("entrou images");
+  // for (const Image& image : characterInfo.character.images) {
+  //   Serial.println(image.type);
+  //   Serial.println(image.base64);
+  //   if (!image.type.isEmpty() && !image.base64.isEmpty()) {
+  //       char* base64code = new char[strlen(image.base64.c_str()) + 1];
+  //       strcpy(base64code, image.base64.c_str());
+  //       // Decode the base64 data to binary data
+  //       int inputStringLength = strlen(base64code);
         
-        int decodedLength = Base64.decodedLength(base64code, inputStringLength);
+  //       int decodedLength = Base64.decodedLength(base64code, inputStringLength);
     
-        // Use a fixed-size buffer for decoding
-        char decodedData[decodedLength + 1];
+  //       // Use a fixed-size buffer for decoding
+  //       char decodedData[decodedLength];
     
-        // Decode directly to the buffer
-        Base64.decode(decodedData, base64code, inputStringLength);
-        decodedData[decodedLength] = '\0'; // Null-terminate the string
+  //       // Decode directly to the buffer
+  //       Base64.decode(decodedData, base64code, inputStringLength);
+  //       // decodedData[decodedLength] = '\0'; // Null-terminate the string
     
-        Serial.print("Decoded string is:\t");
-        Serial.println(decodedData);
+  //       Serial.print("Decoded string is:\t");
+  //       Serial.println(decodedData);
     
-        // Save the binary data to a file in SPIFFS
-        String filePath = image.type; //"/";
-        // filePath.concat(image.type);
-        // filePath.concat(".bmp");
-        File file = SPIFFS.open(filePath.c_str(), "w");
-        if (file) {
-            // Write directly from the buffer
-            file.write((uint8_t*)decodedData, decodedLength);
-            file.close();
-            Serial.print("Image saved to SPIFFS as: ");
-            Serial.println(filePath);
-        } else {
-            Serial.println("Failed to open file for writing.");
-            return false;
-        }
-    }
-  }
+  //       // Save the binary data to a file in SPIFFS
+  //       String filePath = image.type; //"/";
+  //       // filePath.concat(image.type);
+  //       // filePath.concat(".bmp");
+  //       File file = SPIFFS.open(filePath.c_str(), "w");
+  //       if (file) {
+  //           // Write directly from the buffer
+  //           file.write((uint8_t*)decodedData, decodedLength);
+  //           file.close();
+  //           Serial.print("Image saved to SPIFFS as: ");
+  //           Serial.println(filePath);
+  //       } else {
+  //           Serial.println("Failed to open file for writing.");
+  //           return false;
+  //       }
+  //   }
+  // }
 
   return true;
 }

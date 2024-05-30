@@ -33,7 +33,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS_PIN, TFT_DC_PIN, TFT_MOSI_PIN, TFT_
 #define JOY_Y_PIN  GPIO_NUM_34
 #define JOY_BTN_PIN GPIO_NUM_25
 
-// #define BTN_UP_PIN  GPIO_NUM_35
+// #define BTN_UP_PIN  GPIO_NUM_27
 // #define BTN_DOWN_PIN  GPIO_NUM_14
 // #define BTN_LEFT_PIN GPIO_NUM_25
 // #define BTN_RIGHT_PIN GPIO_NUM_26
@@ -261,6 +261,18 @@ void drawHP() {
   }
 }
 
+void displayCharacter() {
+  const CharacterInfo& characterInfo = inf.getCharacterInfo();
+
+  for (const Image& image : characterInfo.character.images) {
+    if(image.type == "character") {
+      char filename[strlen(image.name.c_str()) + 1];
+      strcpy(filename, image.name.c_str());
+      displayImage(filename, CHARACTER_X, CHARACTER_Y);
+    }
+  }
+}
+
 void drawMenu() {
   // limpa a tela
   clearScreen();
@@ -284,7 +296,7 @@ void drawMenu() {
   }
   
   drawHP();
-  displayImage("/character.bmp", CHARACTER_X, CHARACTER_Y);
+  displayCharacter();
 }
 
 void goToHomeScreen() {
