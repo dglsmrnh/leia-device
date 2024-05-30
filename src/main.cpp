@@ -55,12 +55,12 @@ SPIFFS_ImageReader reader;
 
 Information inf;
 
-#define NUM_BUTTONS 3 // Number of menu buttons
+#define NUM_BUTTONS 4 // Number of menu buttons
 // Button colors
 #define COLOR_NORMAL ST7735_WHITE
-#define COLOR_SELECTED ST7735_BLUE
+#define COLOR_SELECTED ST77XX_CYAN
 
-#define MENU_AREA_H 40
+#define MENU_AREA_H 50
 #define MENU_AREA_W 80
 #define FOOTER_AREA 10
 
@@ -74,17 +74,18 @@ Information inf;
 #define JOYSTICK_DEFAULT_X 2000
 #define JOYSTICK_DEFAULT_Y 2000
 
-const char* menuItems[NUM_BUTTONS] = {"Inventario", "Sincronizar", "Atributos"};
+const char* menuItems[NUM_BUTTONS] = {"Inventario", "Sincronizar", "Atributos", "Personagem"};
 int selectedButton = 0; // Index of the currently selected button
 bool homeScreen = true; // Indicates whether the home screen is being displayed
+bool waitingScreen = false; // Indicates whether the waiting screen is being displayed
 
 // Define HP-related variables
 #define MAX_HP 100
 int hp = MAX_HP;
 int hpDecreaseRate = 1; // HP decrease rate per HP_UPDATE_INTERVAL minutes (adjust as needed)
 const char* hpFilePath = "/hp.txt";
-const unsigned long HP_UPDATE_INTERVAL = 1 * 60 * 1000; // minutes in milliseconds
-const unsigned long WAIT_SCREEN_DRAW = 1 * 60 * 1000; // minutes in milliseconds
+const unsigned long HP_UPDATE_INTERVAL = 4 * 60 * 1000; // minutes in milliseconds
+const unsigned long WAIT_SCREEN_DRAW = 5 * 60 * 1000; // minutes in milliseconds
 
 // Variable to store the last update time
 RTC_DATA_ATTR unsigned long lastUpdateTime = millis();
@@ -135,8 +136,8 @@ void drawSynchronize() {
         tft.println("Trocando informacoes com a guilda...");
       }
       else {
-        tft.println("Esperando contato");
-        tft.println("da guilda...");
+        tft.println("Esperando contato da");
+        tft.println("guilda...");
       }
     }
   } else {
@@ -250,13 +251,22 @@ bool readJsonData() {
 }
 
 void drawHP() {
-  if(homeScreen) {
-    tft.fillRect(0, tft.height() - 20, tft.width() - (CHARACTER_X + 20), 20, ST7735_BLACK); // Adjust dimensions as needed
+  if(homeScreen || waitingScreen) {
+    int barWidth = tft.width() - (CHARACTER_X + 10);  // Largura da barra de status
+    int barHeight = 10;  // Altura da barra de status
+    int barX = 0;       // Posição X da barra de status
+    int barY = tft.height() - 20;       // Posição Y da barra de status (no final da tela)
+
+    // Desenhar a borda da barra de status
+    tft.drawRect(barX, barY, barWidth, barHeight, ST77XX_WHITE);
+    // Preencher a barra de status de acordo com o valor atual de currentStatus
+    tft.fillRect(0 + 1, barY + 1, (barWidth - 2), barHeight - 2, ST77XX_BLACK);
+    tft.fillRect(0 + 1, barY + 1, (barWidth - 2) * hp / 100, barHeight - 2, ST77XX_MAGENTA);
     // Draw button text
-    tft.setCursor(0, tft.height() - 20); // Adjust for text alignment
+    tft.setCursor(0, barY - 10); // Adjust for text alignment
     tft.setTextColor(ST7735_WHITE); // Text color
     tft.setTextSize(1); // Text size
-    tft.println("HP");
+    tft.print("HP ");
     tft.println(hp);
   }
 }
@@ -289,7 +299,7 @@ void drawMenu() {
     tft.fillRect(0, buttonY, MENU_AREA_W, buttonHeight, isSelected ? COLOR_SELECTED : COLOR_NORMAL);
 
     // Draw button text
-    tft.setCursor(10, buttonY + buttonHeight / 2 - 4); // Adjust for text alignment
+    tft.setCursor(10, (buttonY + buttonHeight / 2 - 4)); // Adjust for text alignment
     tft.setTextColor(ST7735_BLACK); // Text color
     tft.setTextSize(1); // Text size
     tft.print(menuItems[i]);
@@ -301,7 +311,7 @@ void drawMenu() {
 
 void goToHomeScreen() {
   homeScreen = true;
-  clearScreen();
+  waitingScreen = false;
   drawMenu();
 }
 
@@ -443,6 +453,60 @@ void drawAttributes() {
   }
 }
 
+void drawCharacter() {
+  clearScreen();
+  const CharacterInfo& characterInfo = inf.getCharacterInfo();
+
+  // Define the height of the grid sections
+  int cellWidth = tft.width() / 2;
+
+  // Show inventory information on the screen
+  int xPos = 0;
+
+  // Set position for printing the item name
+  tft.setCursor(xPos + 2, 5);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(1);
+  tft.println(characterInfo.username);
+
+  // Set position for printing the quantity text
+  tft.setCursor(xPos + 2 / 2, 15);
+  tft.setTextSize(1); // Larger font size for quantity
+  tft.setTextColor(ST77XX_BLUE);
+  tft.print(characterInfo.character.class_name);
+
+  // Update horizontal position for the next grid cell
+  xPos = 0; // Adjust as needed
+  int yPos = (tft.height() / 2) - 5;
+
+  // Set position for printing the item name
+  tft.setCursor(xPos + (cellWidth - strlen("Nivel") * 6) / 2, yPos);
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.print("Nivel");
+
+  // Set position for printing the quantity text
+  tft.setCursor(xPos + 2, yPos + 10);
+  tft.setTextSize(2); // Larger font size for quantity
+  tft.setTextColor(ST77XX_GREEN);
+  tft.print(characterInfo.character.level);
+
+  // Update horizontal position for the next grid cell
+  xPos += cellWidth; // Adjust as needed
+
+  // Set position for printing the item name
+  tft.setCursor(xPos + (cellWidth - strlen("Moedas") * 6) / 2, yPos);
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.print("Moedas");
+
+  // Set position for printing the quantity text
+  tft.setCursor(xPos + 2, yPos + 10);
+  tft.setTextSize(2); // Larger font size for quantity
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.print(characterInfo.character.coins);
+}
+
 void drawInventory(int xVal) {
   // Clear the screen
   clearScreen();
@@ -506,22 +570,61 @@ void drawInventory(int xVal) {
   }
 }
 
-// Draw bubble speech
 void drawSpeechBubble(int x, int y, int w, int h, int tailX, int tailY) {
   tft.drawRoundRect(x, y, w, h, 5, ST77XX_WHITE);
   tft.fillRoundRect(x, y, w, h, 5, ST77XX_WHITE);
-  tft.fillTriangle(tailX, tailY, tailX + 10, tailY - 10, tailX - 10, tailY - 10, ST77XX_WHITE);
+
+  // Desenhar a cauda do balão (triângulo)
+  int tailWidth = 10; // Largura da base do triângulo
+  int tailHeight = 10; // Altura do triângulo
+  tft.fillTriangle(tailX, tailY, tailX + tailWidth / 2, tailY - tailHeight, tailX - tailWidth / 2, tailY - tailHeight, ST77XX_WHITE);
 }
 
 // Get a random Phrase
 String getRandomPhrase() {
   String phrases[] = {
-    "Procurando o botão de atacar...",
-    "Evitando armadilhas mortais...",
-    "Consultando o oráculo das dicas...",
-    "Tentando não acordar o dragão...",
-    "Misturando poções mágicas...",
-    "Decifrando runas antigas..."
+    "Misturando pocoes magicas...",
+    "Decifrando runas antigas...",
+    "Cavalgando unicornios...",
+    "Resgatando princesas...",
+    "Lutando contra goblins...",
+    "Fazendo amizade com dragoes...",
+    "Cruzando florestas magicas...",
+    "Procurando tesouros perdidos...",
+    "Desviando de flechas...",
+    "Invocando espiritos...",
+    "Lançando feiticos...",
+    "Enfrentando monstros...",
+    "Ajustando a mira...",
+    "Forjando espadas...",
+    "Explorando masmorras...",
+    "Trocando historias...",
+    "Cuidando das feridas...",
+    "Atacando dragoes furiosos...",
+    "Fugindo de armadilhas...",
+    "Negociando com duendes...",
+    "Treinando novos feiticos...",
+    "Explorando cavernas escuras...",
+    "Descobrindo artefatos antigos...",
+    "Recuperando energia magica...",
+    "Aprimorando habilidades...",
+    "Construindo fortalezas...",
+    "Desafiando o destino...",
+    "Navegando por mares perigosos...",
+    "Cacando tesouros lendários...",
+    "Desvendando enigmas antigos...",
+    "Defendendo aldeias pacificas...",
+    "Aumentando a resistencia...",
+    "Domando bestas selvagens...",
+    "Planejando estrategias ousadas...",
+    "Estudando magias proibidas...",
+    "Vencendo batalhas epicas...",
+    "Curando ferimentos graves...",
+    "Restaurando a paz no reino...",
+    "Aprendendo com sabios ancestrais...",
+    "Escapando de perigos mortais...",
+    "Descobrindo segredos ocultos...",
+    "Protegendo fronteiras sagradas..."
   };
   int index = random(0, 6);
   return phrases[index];
@@ -529,20 +632,34 @@ String getRandomPhrase() {
 
 void drawWaitingScreen() {
   clearScreen();
+  waitingScreen = true;
+  homeScreen = false;
   // Desenhar o balão de fala
-  int bubbleHeight = (tft.height() * 2) / 3;
-  int bubbleWidth = tft.width() - 20;  // Definir a largura do balão com uma margem
-  int bubbleX = 10;  // Posição X do balão
-  int bubbleY = 10;  // Posição Y do balão
-  int tailX = 20;    // Posição X da cauda do balão
-  int tailY = bubbleY + bubbleHeight;  // Posição Y da cauda do balão
+  int bubbleHeight = (MENU_AREA_H * 2) / 3;
+  int bubbleWidth = tft.width();  // Definir a largura do balão com uma margem
+  int bubbleX = 0;  // Posição X do balão
+  int bubbleY = 5;  // Posição Y do balão
+  int tailX = bubbleWidth + bubbleX - 10;    // Posição X da cauda do balão (ajustada para alinhar com o balão)
+  int tailY = bubbleY + bubbleHeight + 10;  // Posição Y da cauda do balão
+
   drawSpeechBubble(bubbleX, bubbleY, bubbleWidth, bubbleHeight, tailX, tailY);
 
   // Exibir uma frase aleatória
-  tft.setCursor(bubbleX + 5, bubbleY + 20);
+  tft.setCursor(bubbleX + 5, bubbleY + 5);
   tft.setTextColor(ST77XX_BLACK);
   tft.setTextSize(1);
   tft.print(getRandomPhrase());
+
+  const CharacterInfo& characterInfo = inf.getCharacterInfo();
+  
+  tft.setCursor(tft.width() - (CHARACTER_X + 10) + 5, tft.height() - 20); // Adjust for text alignment
+  tft.setTextColor(ST7735_WHITE); // Text color
+  tft.setTextWrap(false);
+  tft.setTextSize(1); // Text size
+  tft.println(characterInfo.username);
+  // tft.setTextColor(ST7735_BLUE); // Text color
+  // tft.println(characterInfo.character.class_name);
+  tft.setTextWrap(true);
 
   drawHP();
 }
@@ -590,7 +707,7 @@ void setup() {
 
   readJsonData();
   loadHP();
-  drawMenu();
+  goToHomeScreen();
 }
 
 void loop() {
@@ -661,12 +778,12 @@ void loop() {
     if (yVal < JOYSTICK_UP) {
       selectedButton--; // Move up
       if (selectedButton < 0) selectedButton = NUM_BUTTONS - 1;
-      drawMenu();
+      goToHomeScreen();
       
     } else if (yVal > JOYSTICK_DOWN) {
       selectedButton++; // Move down
       if (selectedButton >= NUM_BUTTONS) selectedButton = 0;
-      drawMenu();
+      goToHomeScreen();
     }
     // Handle button press
     else if (btn_start) {
@@ -683,24 +800,32 @@ void loop() {
         drawAttributes();
         // goToSleep();
       }
+      else if(selectedButton == 3) { // Character
+        drawCharacter();
+      }
     }
     else {
       // Check if it's time to draw waiting screen
-      if (elapsedWaitingScreenTime >= HP_UPDATE_INTERVAL) {
+      if (elapsedWaitingScreenTime >= WAIT_SCREEN_DRAW) {
         drawWaitingScreen();
       }
     }
   } else { //any menu screen
     if (btn_back) {
       // If not on menu screen, return to the menu screen
-      if(selectedButton == 1) {
-        stopBLEAdvertising();
+      if(!waitingScreen) {
+        if(selectedButton == 1) {
+          stopBLEAdvertising();
+        }
       }
       goToHomeScreen();
     }
     else {
       if(btn_start) {
-        if(selectedButton == 0) { // Inventory
+        if(waitingScreen) { // waiting screen
+          goToHomeScreen(); // any interaction on waiting screen go to menu screen
+        }
+        else if(selectedButton == 0) { // Inventory
           recoverHP();
         }
         else if(selectedButton == 1) { // Syncronize
@@ -708,9 +833,21 @@ void loop() {
         else if(selectedButton == 2) { // Atributtes
 
         }
+        else if(selectedButton == 3) { // Character
+
+        }
       }
       else {
-        if(selectedButton == 0) { // Inventory
+        if(waitingScreen) { // waiting screen
+          if(xVal < JOYSTICK_LEFT || xVal > JOYSTICK_RIGHT || yVal < JOYSTICK_UP || yVal > JOYSTICK_DOWN || btn_start || btn_back) {
+            goToHomeScreen(); // any interaction on waiting screen go to menu screen
+          }
+          else if (elapsedWaitingScreenTime >= WAIT_SCREEN_DRAW) {
+            // Check if it's time to redraw waiting screen
+            drawWaitingScreen();
+          }
+        }
+        else if(selectedButton == 0) { // Inventory
           if (xVal < JOYSTICK_LEFT) {
             // If moving left, redraw inventory
             drawInventory(xVal);
@@ -725,9 +862,12 @@ void loop() {
         else if(selectedButton == 2) { // Atributtes
           // goToSleep();
         }
+        else if(selectedButton == 3) { // Character
+
+        }
         else {
           // Check if it's time to draw waiting screen
-          if (elapsedWaitingScreenTime >= HP_UPDATE_INTERVAL) {
+          if (elapsedWaitingScreenTime >= WAIT_SCREEN_DRAW) {
             drawWaitingScreen();
           }
         }

@@ -24,6 +24,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
     characterInfo.character.coins = character["coins"].as<int>();
     characterInfo.character.class_name = character["class_name"].as<String>();
     characterInfo.character.race = character["race"].as<String>();
+    characterInfo.character.level = character["level"].as<int>();
 
     // Process attributes
     JsonArray attributesArray = character["attributes"];
@@ -183,6 +184,7 @@ bool Information::saveCharacterInfoToSPIFFS() {
   character["coins"] = this->characterInfo.character.coins;
   character["class_name"] = this->characterInfo.character.class_name;
   character["race"] = this->characterInfo.character.race;
+  character["level"] = this->characterInfo.character.level;
 
   // Add attributes array to the character
   JsonArray attributesArray = character.createNestedArray("attributes");
@@ -209,6 +211,14 @@ bool Information::saveCharacterInfoToSPIFFS() {
     q["id"] = quest.id;
     q["name"] = quest.name;
     q["status"] = quest.status;
+  }
+
+  // Add quests array to the character
+  JsonArray imagesArray = character.createNestedArray("images");
+  for (const Image& image : this->characterInfo.character.images) {
+    JsonObject img = imagesArray.createNestedObject();
+    img["type"] = image.type;
+    img["name"] = image.name;
   }
 
   // Open the data.json file in write mode
