@@ -65,7 +65,7 @@
     "images": [
       {
         "type": "character",
-        "name": "/robot.bmp"
+        "name": "/character.bmp"
       }
     ]
   }
