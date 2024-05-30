@@ -16,6 +16,7 @@
 #include <ArduinoJson.h>
 #include <Base64.h>
 #include <Information.h>
+#include <Fonts/FreeSans9pt7b.h>
 
 // Display interface configuration
 #define TFT_CS_PIN    GPIO_NUM_5
@@ -28,14 +29,14 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS_PIN, TFT_DC_PIN, TFT_MOSI_PIN, TFT_
 // Display backlight enable pin
 #define TFT_BACKLIGHT_PIN GPIO_NUM_4
 
-// #define JOY_X_PIN  GPIO_NUM_35
-// #define JOY_Y_PIN  GPIO_NUM_34
-// #define JOY_BTN_PIN GPIO_NUM_25
+#define JOY_X_PIN  GPIO_NUM_35
+#define JOY_Y_PIN  GPIO_NUM_34
+#define JOY_BTN_PIN GPIO_NUM_25
 
-#define BTN_UP_PIN  GPIO_NUM_35
-#define BTN_DOWN_PIN  GPIO_NUM_14
-#define BTN_LEFT_PIN GPIO_NUM_25
-#define BTN_RIGHT_PIN GPIO_NUM_26
+// #define BTN_UP_PIN  GPIO_NUM_35
+// #define BTN_DOWN_PIN  GPIO_NUM_14
+// #define BTN_LEFT_PIN GPIO_NUM_25
+// #define BTN_RIGHT_PIN GPIO_NUM_26
 
 #define BTN_BACK_PIN GPIO_NUM_33
 #define BTN_START_PIN GPIO_NUM_32 
@@ -73,7 +74,7 @@ Information inf;
 #define JOYSTICK_DEFAULT_X 2000
 #define JOYSTICK_DEFAULT_Y 2000
 
-const char* menuItems[NUM_BUTTONS] = {"Inventario", "Sincronizar", "Desligar"};
+const char* menuItems[NUM_BUTTONS] = {"Inventario", "Sincronizar", "Atributos"};
 int selectedButton = 0; // Index of the currently selected button
 bool homeScreen = true; // Indicates whether the home screen is being displayed
 
@@ -83,12 +84,20 @@ int hp = MAX_HP;
 int hpDecreaseRate = 1; // HP decrease rate per HP_UPDATE_INTERVAL minutes (adjust as needed)
 const char* hpFilePath = "/hp.txt";
 const unsigned long HP_UPDATE_INTERVAL = 1 * 60 * 1000; // minutes in milliseconds
+const unsigned long WAIT_SCREEN_DRAW = 1 * 60 * 1000; // minutes in milliseconds
 
 // Variable to store the last update time
 RTC_DATA_ATTR unsigned long lastUpdateTime = millis();
+unsigned long lastUpdateWaitingScreenTime = millis();
+
+void updateLastActiveTime() {
+  unsigned long currentTime = millis();
+  lastUpdateWaitingScreenTime = currentTime;
+}
 
 void clearScreen() {
   tft.fillScreen(ST77XX_BLACK); // Clear the screen
+  updateLastActiveTime();
 }
 
 // Function to put ESP32 to sleep
@@ -112,22 +121,22 @@ void goToSleep() {
 void drawSynchronize() {
   clearScreen();
   // Clear the screen
-  tft.fillScreen(ST77XX_BLACK);
 
   // Display BLE status
   if (BLEDevice::getInitialized()) {
     tft.setCursor(0, 10);
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(1);
-    tft.println("Esperando contato da guilda...");
     if (deviceConnected) {
-      tft.println("Contato com a guilda. Siga os passos no app.");
+      tft.println("Contato com a guilda.");
+      tft.println("Siga os passos no app.");
     } else {
       if(transferingData) {
         tft.println("Trocando informacoes com a guilda...");
       }
       else {
-        // tft.println("Nenhum dispositivo conectado...");
+        tft.println("Esperando contato");
+        tft.println("da guilda...");
       }
     }
   } else {
@@ -317,11 +326,11 @@ void decreaseHP() {
   unsigned long currentTime = millis();
   unsigned long elapsedTime = currentTime - lastUpdateTime;
 
-  // Calculate the number of intervals of 20 minutes elapsed
+  // Calculate the number of intervals of X minutes elapsed
   unsigned long intervals = elapsedTime / HP_UPDATE_INTERVAL;
 
   // Calculate the HP decrease amount based on the number of intervals and the HP decrease rate
-  int hpDecreaseAmount = intervals * hpDecreaseRate; // Decrease HP by hpDecreaseRate for each 20-minute interval
+  int hpDecreaseAmount = intervals * hpDecreaseRate; // Decrease HP by hpDecreaseRate for each X-minute interval
 
   // Decrease HP by the calculated amount
   hp -= hpDecreaseAmount;
@@ -389,6 +398,39 @@ void recoverHP() {
   goToHomeScreen();
 }
 
+void drawAttributes() {
+  clearScreen();
+  const CharacterInfo& characterInfo = inf.getCharacterInfo();
+  Serial.println(characterInfo.character.attributes.size());
+  int columns = 3;  // Número de itens por linha
+  int itemWidth = tft.width() / columns;  // Largura de cada item
+  int itemHeight = tft.height() / ((characterInfo.character.attributes.size() + columns - 1) / columns);  // Altura de cada linha de item
+  
+  uint16_t colors[] = {ST77XX_RED, ST77XX_GREEN, ST77XX_BLUE, ST77XX_YELLOW, ST77XX_CYAN, ST77XX_MAGENTA};
+
+  for (size_t i = 0; i < characterInfo.character.attributes.size(); i++) {
+    int x = (i % columns) * itemWidth; // Calcula a posição x
+    int y = (i / columns) * itemHeight; // Calcula a posição y
+
+    // Escolha uma cor baseada no índice
+    uint16_t color = colors[i % (sizeof(colors) / sizeof(colors[0]))];
+    
+    // Desenhe o nome
+    tft.setCursor(x, y);
+    tft.setTextColor(color);
+    tft.setTextSize(1);
+    tft.print(characterInfo.character.attributes[i].name);
+    
+    // Desenhe a quantidade
+    tft.setCursor(x, y + 10);
+    tft.setTextColor(color);
+    tft.setTextSize(2);
+    tft.print(characterInfo.character.attributes[i].points);
+
+    tft.setTextSize(1);
+  }
+}
+
 void drawInventory(int xVal) {
   // Clear the screen
   clearScreen();
@@ -452,21 +494,64 @@ void drawInventory(int xVal) {
   }
 }
 
+// Draw bubble speech
+void drawSpeechBubble(int x, int y, int w, int h, int tailX, int tailY) {
+  tft.drawRoundRect(x, y, w, h, 5, ST77XX_WHITE);
+  tft.fillRoundRect(x, y, w, h, 5, ST77XX_WHITE);
+  tft.fillTriangle(tailX, tailY, tailX + 10, tailY - 10, tailX - 10, tailY - 10, ST77XX_WHITE);
+}
+
+// Get a random Phrase
+String getRandomPhrase() {
+  String phrases[] = {
+    "Procurando o botão de atacar...",
+    "Evitando armadilhas mortais...",
+    "Consultando o oráculo das dicas...",
+    "Tentando não acordar o dragão...",
+    "Misturando poções mágicas...",
+    "Decifrando runas antigas..."
+  };
+  int index = random(0, 6);
+  return phrases[index];
+}
+
+void drawWaitingScreen() {
+  clearScreen();
+  // Desenhar o balão de fala
+  int bubbleHeight = (tft.height() * 2) / 3;
+  int bubbleWidth = tft.width() - 20;  // Definir a largura do balão com uma margem
+  int bubbleX = 10;  // Posição X do balão
+  int bubbleY = 10;  // Posição Y do balão
+  int tailX = 20;    // Posição X da cauda do balão
+  int tailY = bubbleY + bubbleHeight;  // Posição Y da cauda do balão
+  drawSpeechBubble(bubbleX, bubbleY, bubbleWidth, bubbleHeight, tailX, tailY);
+
+  // Exibir uma frase aleatória
+  tft.setCursor(bubbleX + 5, bubbleY + 20);
+  tft.setTextColor(ST77XX_BLACK);
+  tft.setTextSize(1);
+  tft.print(getRandomPhrase());
+
+  drawHP();
+}
+
 void setup() {
 
   Serial.begin(115200);
   Serial.println(F("Hello! ST7735mini TFT"));
-  // pinMode(JOY_X_PIN, INPUT);
-  // pinMode(JOY_Y_PIN, INPUT);
-  // pinMode(JOY_BTN_PIN, INPUT);
+  pinMode(JOY_X_PIN, INPUT);
+  pinMode(JOY_Y_PIN, INPUT);
+  pinMode(JOY_BTN_PIN, INPUT);
 
-  pinMode(BTN_UP_PIN, INPUT_PULLUP);
-  pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
-  pinMode(BTN_LEFT_PIN, INPUT_PULLUP);
-  pinMode(BTN_RIGHT_PIN, INPUT_PULLUP);
+  // pinMode(BTN_UP_PIN, INPUT_PULLUP);
+  // pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
+  // pinMode(BTN_LEFT_PIN, INPUT_PULLUP);
+  // pinMode(BTN_RIGHT_PIN, INPUT_PULLUP);
   
   pinMode(BTN_BACK_PIN, INPUT_PULLUP);
   pinMode(BTN_START_PIN, INPUT_PULLUP);
+
+  randomSeed(analogRead(0));
 
   // Enable wake-up from the button press (low-to-high transition)
   // esp_sleep_enable_ext0_wakeup(JOY_BTN_PIN, HIGH);
@@ -479,8 +564,9 @@ void setup() {
 
   // initialize display and turn on backlight
   tft.initR(INITR_MINI160x80_PLUGIN);  // Init ST7735S mini display (when seeing inversed)
-  //tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
+  // tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
   tft.setRotation(1); // Set display rotation as needed
+  // tft.setFont(&FreeSans9pt7b);
   Serial.println(F("Initialized"));
   delay(500);
   pinMode(TFT_BACKLIGHT_PIN, OUTPUT);
@@ -498,38 +584,38 @@ void setup() {
 void loop() {
 
   // Read joystick position
-  // int xVal = analogRead(JOY_X_PIN);
-  // int yVal = analogRead(JOY_Y_PIN);
+  int xVal = analogRead(JOY_X_PIN);
+  int yVal = analogRead(JOY_Y_PIN);
 
-  bool btn_up = !digitalRead(BTN_UP_PIN);
-  bool btn_down = !digitalRead(BTN_DOWN_PIN);
-  bool btn_left = !digitalRead(BTN_LEFT_PIN);
-  bool btn_right = !digitalRead(BTN_RIGHT_PIN);
+  // bool btn_up = !digitalRead(BTN_UP_PIN);
+  // bool btn_down = !digitalRead(BTN_DOWN_PIN);
+  // bool btn_left = !digitalRead(BTN_LEFT_PIN);
+  // bool btn_right = !digitalRead(BTN_RIGHT_PIN);
 
-  Serial.print("btn_up ");
-  Serial.println((btn_up ? "false" : "true"));
-  Serial.print("btn_down ");
-  Serial.println((btn_down ? "false" : "true"));
-  Serial.print("btn_left ");
-  Serial.println((btn_left ? "false" : "true"));
-  Serial.print("btn_right ");
-  Serial.println((btn_right ? "false" : "true"));  
+  // Serial.print("btn_up ");
+  // Serial.println((btn_up ? "false" : "true"));
+  // Serial.print("btn_down ");
+  // Serial.println((btn_down ? "false" : "true"));
+  // Serial.print("btn_left ");
+  // Serial.println((btn_left ? "false" : "true"));
+  // Serial.print("btn_right ");
+  // Serial.println((btn_right ? "false" : "true"));  
 
-  int xVal = JOYSTICK_DEFAULT_X;
-  int yVal = JOYSTICK_DEFAULT_Y;
+  // int xVal = JOYSTICK_DEFAULT_X;
+  // int yVal = JOYSTICK_DEFAULT_Y;
 
-  if(btn_up) {
-    yVal = JOYSTICK_UP - 1; // minus 1 to work
-  }
-  else if(btn_down) {
-    yVal = JOYSTICK_DOWN + 1; // plus 1 to work
-  }
-  else if(btn_left) {
-    xVal = JOYSTICK_LEFT - 1; // minus 1 to work
-  }
-  else if(btn_right) {
-    xVal = JOYSTICK_RIGHT + 1; // plus 1 to work
-  }
+  // if(btn_up) {
+  //   yVal = JOYSTICK_UP - 1; // minus 1 to work
+  // }
+  // else if(btn_down) {
+  //   yVal = JOYSTICK_DOWN + 1; // plus 1 to work
+  // }
+  // else if(btn_left) {
+  //   xVal = JOYSTICK_LEFT - 1; // minus 1 to work
+  // }
+  // else if(btn_right) {
+  //   xVal = JOYSTICK_RIGHT + 1; // plus 1 to work
+  // }
   
 
   // Serial.print("x ");
@@ -551,6 +637,8 @@ void loop() {
 
   // Calculate time elapsed since last HP update
   unsigned long elapsedTime = millis() - lastUpdateTime;
+  unsigned long elapsedWaitingScreenTime = millis() - lastUpdateWaitingScreenTime;
+  
 
   // Check if it's time to update HP
   if (elapsedTime >= HP_UPDATE_INTERVAL) {
@@ -568,9 +656,8 @@ void loop() {
       if (selectedButton >= NUM_BUTTONS) selectedButton = 0;
       drawMenu();
     }
-
     // Handle button press
-    if (btn_start) {
+    else if (btn_start) {
       // Clear the screen and show the selected menu
       homeScreen = false;
       if(selectedButton == 0) { // Inventory
@@ -580,8 +667,15 @@ void loop() {
         startBLEAdvertising();
         drawSynchronize();
       }
-      else if(selectedButton == 2) { // Sleep mode
-        goToSleep();
+      else if(selectedButton == 2) { // Atributtes
+        drawAttributes();
+        // goToSleep();
+      }
+    }
+    else {
+      // Check if it's time to draw waiting screen
+      if (elapsedWaitingScreenTime >= HP_UPDATE_INTERVAL) {
+        drawWaitingScreen();
       }
     }
   } else { //any menu screen
@@ -599,7 +693,7 @@ void loop() {
         }
         else if(selectedButton == 1) { // Syncronize
         }
-        else if(selectedButton == 2) { // Sleep mode
+        else if(selectedButton == 2) { // Atributtes
 
         }
       }
@@ -616,8 +710,14 @@ void loop() {
         else if(selectedButton == 1) { // Syncronize
           
         }
-        else if(selectedButton == 2) { // Sleep mode
-          goToSleep();
+        else if(selectedButton == 2) { // Atributtes
+          // goToSleep();
+        }
+        else {
+          // Check if it's time to draw waiting screen
+          if (elapsedWaitingScreenTime >= HP_UPDATE_INTERVAL) {
+            drawWaitingScreen();
+          }
         }
       }
     }

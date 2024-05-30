@@ -55,7 +55,7 @@ bool Information::processJson(const char* json, const bool saveJson) {
     }
 
     addCharacterInfo(characterInfo);
-    saveImages();
+    // saveImages();
 
     if(saveJson) {
         // Save the binary data to a file in SPIFFS

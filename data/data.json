@@ -7,10 +7,10 @@
     "level": 5,
     "coins": 100,
     "quests": [],
-    "attributtes": [
+    "attributes": [
       {
         "id": "forca",
-        "name": "Força",
+        "name": "Forca",
         "points": 12,
         "color" : "#FFF"
       },
@@ -22,13 +22,13 @@
       },
       {
         "id": "constituicao",
-        "name": "Constituição",
+        "name": "Fisico",
         "points": 14,
         "color" : "#FFF"
       },
       {
         "id": "inteligencia",
-        "name": "Inteligência",
+        "name": "Intelecto",
         "points": 10,
         "color" : "#FFF"
       },
@@ -49,12 +49,12 @@
       {
         "id": "/pocao_amarela.bmp",
         "name": "Amarela",
-        "quantity": 2
+        "quantity": 0
       },
       {
         "id": "/pocao_laranja.bmp",
         "name": "Laranja",
-        "quantity": 1
+        "quantity": 0
       },
       {
         "id": "/pocao_vermelha.bmp",
