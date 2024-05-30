@@ -29,14 +29,14 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS_PIN, TFT_DC_PIN, TFT_MOSI_PIN, TFT_
 // Display backlight enable pin
 #define TFT_BACKLIGHT_PIN GPIO_NUM_4
 
-#define JOY_X_PIN  GPIO_NUM_35
-#define JOY_Y_PIN  GPIO_NUM_34
-#define JOY_BTN_PIN GPIO_NUM_25
+// #define JOY_X_PIN  GPIO_NUM_35
+// #define JOY_Y_PIN  GPIO_NUM_34
+// #define JOY_BTN_PIN GPIO_NUM_25
 
-// #define BTN_UP_PIN  GPIO_NUM_27
-// #define BTN_DOWN_PIN  GPIO_NUM_14
-// #define BTN_LEFT_PIN GPIO_NUM_25
-// #define BTN_RIGHT_PIN GPIO_NUM_26
+#define BTN_UP_PIN  GPIO_NUM_27
+#define BTN_DOWN_PIN  GPIO_NUM_14
+#define BTN_LEFT_PIN GPIO_NUM_25
+#define BTN_RIGHT_PIN GPIO_NUM_26
 
 #define BTN_BACK_PIN GPIO_NUM_33
 #define BTN_START_PIN GPIO_NUM_32 
@@ -668,14 +668,14 @@ void setup() {
 
   Serial.begin(115200);
   Serial.println(F("Hello! ST7735mini TFT"));
-  pinMode(JOY_X_PIN, INPUT);
-  pinMode(JOY_Y_PIN, INPUT);
-  pinMode(JOY_BTN_PIN, INPUT);
+  // pinMode(JOY_X_PIN, INPUT);
+  // pinMode(JOY_Y_PIN, INPUT);
+  // pinMode(JOY_BTN_PIN, INPUT);
 
-  // pinMode(BTN_UP_PIN, INPUT_PULLUP);
-  // pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
-  // pinMode(BTN_LEFT_PIN, INPUT_PULLUP);
-  // pinMode(BTN_RIGHT_PIN, INPUT_PULLUP);
+  pinMode(BTN_UP_PIN, INPUT_PULLUP);
+  pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
+  pinMode(BTN_LEFT_PIN, INPUT_PULLUP);
+  pinMode(BTN_RIGHT_PIN, INPUT_PULLUP);
   
   pinMode(BTN_BACK_PIN, INPUT_PULLUP);
   pinMode(BTN_START_PIN, INPUT_PULLUP);
@@ -713,13 +713,13 @@ void setup() {
 void loop() {
 
   // Read joystick position
-  int xVal = analogRead(JOY_X_PIN);
-  int yVal = analogRead(JOY_Y_PIN);
+  // int xVal = analogRead(JOY_X_PIN);
+  // int yVal = analogRead(JOY_Y_PIN);
 
-  // bool btn_up = !digitalRead(BTN_UP_PIN);
-  // bool btn_down = !digitalRead(BTN_DOWN_PIN);
-  // bool btn_left = !digitalRead(BTN_LEFT_PIN);
-  // bool btn_right = !digitalRead(BTN_RIGHT_PIN);
+  bool btn_up = !digitalRead(BTN_UP_PIN);
+  bool btn_down = !digitalRead(BTN_DOWN_PIN);
+  bool btn_left = !digitalRead(BTN_LEFT_PIN);
+  bool btn_right = !digitalRead(BTN_RIGHT_PIN);
 
   // Serial.print("btn_up ");
   // Serial.println((btn_up ? "false" : "true"));
@@ -730,21 +730,21 @@ void loop() {
   // Serial.print("btn_right ");
   // Serial.println((btn_right ? "false" : "true"));  
 
-  // int xVal = JOYSTICK_DEFAULT_X;
-  // int yVal = JOYSTICK_DEFAULT_Y;
+  int xVal = JOYSTICK_DEFAULT_X;
+  int yVal = JOYSTICK_DEFAULT_Y;
 
-  // if(btn_up) {
-  //   yVal = JOYSTICK_UP - 1; // minus 1 to work
-  // }
-  // else if(btn_down) {
-  //   yVal = JOYSTICK_DOWN + 1; // plus 1 to work
-  // }
-  // else if(btn_left) {
-  //   xVal = JOYSTICK_LEFT - 1; // minus 1 to work
-  // }
-  // else if(btn_right) {
-  //   xVal = JOYSTICK_RIGHT + 1; // plus 1 to work
-  // }
+  if(btn_up) {
+    yVal = JOYSTICK_UP - 1; // minus 1 to work
+  }
+  else if(btn_down) {
+    yVal = JOYSTICK_DOWN + 1; // plus 1 to work
+  }
+  else if(btn_left) {
+    xVal = JOYSTICK_LEFT - 1; // minus 1 to work
+  }
+  else if(btn_right) {
+    xVal = JOYSTICK_RIGHT + 1; // plus 1 to work
+  }
   
 
   // Serial.print("x ");
